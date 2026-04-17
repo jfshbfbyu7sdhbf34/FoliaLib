@@ -1,32 +1,44 @@
+# 工作流名称：编译构建 FoliaLib
 name: Build FoliaLib
 
+# 触发条件：3种情况都会自动编译
 on:
-  push:
+  push:         # 推送到main分支时触发
     branches: [ main ]
-  pull_request:
+  pull_request: # 提交PR时触发
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动点击运行（最常用）
 
+# 编译任务
 jobs:
   build:
+    # 运行环境：Ubuntu最新版
     runs-on: ubuntu-latest
-
+    # 步骤：一步步执行编译
     steps:
-      - name: Checkout code
+      # 1. 拉取你仓库的代码（必须第一步）
+      - name: 拉取项目代码
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      # 2. 设置Java环境（项目要求JDK 17）
+      - name: 配置JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
+          java-version: '17'          # Java版本
+          distribution: 'temurin'      # 官方推荐JDK发行版
+          cache: 'gradle'              # 缓存Gradle依赖，加速编译
 
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
+      # 3. 给Gradle执行权限（Linux系统必须加，否则报错）
+      - name: 授予Gradle执行权限
+        run: chmod +x gradlew
 
-      - name: Upload build artifact
+      # 4. 核心：用Gradle编译项目（跳过测试，更快）
+      - name: 编译构建插件
+        run: ./gradlew clean build -x test
+
+      # 5. 上传编译好的jar包（可直接下载使用）
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: FoliaLib
-          path: target/*.jar
+          name: FoliaLib-编译版    # 下载包的名字
+          path: build/libs/*.jar   # 编译后的jar包所在路径（Gradle专用）
